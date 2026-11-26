@@ -3,20 +3,60 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FreeRoute Hybrid: local-first AI routing</title>
+    <title>FreeRoute Hybrid — local-first AI routing</title>
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
     <main>
-      <h1>FreeRoute Hybrid</h1>
-      <p class="tag">Runs on your device when it can, in the cloud only when it must. Built on Firebase AI Logic hybrid inference.</p>
+      <header>
+        <p class="eyebrow">#BuildHybridAI 2026 · Firebase AI Logic</p>
+        <h1>FreeRoute Hybrid</h1>
+        <p class="tag">Runs on your device when it can. Uses the cloud only when it must.</p>
+      </header>
+
       <div id="banner" class="banner" hidden></div>
-      <button id="warm" type="button">1. Prepare on-device model (Chrome 139+)</button>
-      <span id="warm-status" aria-live="polite"></span>
-      <label for="prompt">2. Ask something</label>
-      <textarea id="prompt" rows="5" placeholder="Summarize this note in two sentences: ..."></textarea>
-      <button id="go" type="button">Route and run</button>
+
+      <section class="how" aria-labelledby="how-title">
+        <h2 id="how-title">How a request is routed</h2>
+        <ol>
+          <li><strong>Policy first.</strong> A local rules engine scores the prompt: length, privacy cues, and whether it looks like heavy analysis.</li>
+          <li><strong>Local-first or cloud-first.</strong> Short or private tasks try Gemini Nano on this device. Long or heavy tasks try the cloud model first.</li>
+          <li><strong>Hybrid fallback.</strong> Firebase AI Logic still falls back if the preferred path is unavailable, and the response badge shows which path actually ran.</li>
+        </ol>
+      </section>
+
+      <section class="panel" aria-labelledby="run-title">
+        <h2 id="run-title">Try a task</h2>
+        <div class="presets" role="group" aria-label="Example prompts">
+          <button type="button" class="chip" data-preset="short">Short summary</button>
+          <button type="button" class="chip" data-preset="private">Private reminder</button>
+          <button type="button" class="chip" data-preset="heavy">Heavy analysis</button>
+          <button type="button" class="chip" data-preset="long">Over the on-device budget</button>
+        </div>
+
+        <div class="actions-row">
+          <button id="warm" type="button">Prepare on-device model</button>
+          <span id="warm-status" aria-live="polite"></span>
+        </div>
+        <p class="hint">Chrome 139+ on desktop. Preparing the model must start from this button (a user click). It can take a few minutes the first time.</p>
+
+        <label for="prompt">Your prompt</label>
+        <textarea id="prompt" rows="6" placeholder="Summarize this note in two sentences: …"></textarea>
+
+        <aside id="plan" class="plan" aria-live="polite">
+          <span class="plan-label">Planned route</span>
+          <span id="plan-route">Type or pick an example to see the route.</span>
+          <p id="plan-reasons"></p>
+        </aside>
+
+        <button id="go" type="button" class="primary">Route and run</button>
+      </section>
+
       <section id="out" aria-live="polite"></section>
+      <section id="log" class="log" hidden>
+        <h2>This session</h2>
+        <ol id="log-list"></ol>
+      </section>
       <footer id="stats">No requests yet.</footer>
     </main>
     <script type="module" src="/src/main.ts"></script>

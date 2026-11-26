@@ -3,45 +3,100 @@ import { firebaseConfigured, warmOnDeviceModel } from "./firebase";
 import { runTask } from "./run";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-const stats: Stats = { onDevice: 0, inCloud: 0, mock: 0 };
 
+const PRESETS: Record<string, string> = {
+  short: "Summarize this note in two sentences: The library holds a Saturday coding hour at 10, and I want a reminder to bring my laptop charger.",
+  private: "Keep this confidential: draft a one-line personal reminder that I have a private appointment tomorrow at 2.",
+  heavy: "Analyze these three options and compare the tradeoffs of local models, hosted free tiers, and paid APIs for a solo developer.",
+  long: `${"This is a long briefing. ".repeat(280)}Please extract the five main risks and list them as bullets.`,
+};
+
+const stats: Stats = { onDevice: 0, inCloud: 0, mock: 0 };
+const history: { source: string; route: string }[] = [];
+
+const banner = $("banner");
 if (!firebaseConfigured) {
-  const b = $("banner");
-  b.hidden = false;
-  b.textContent = "Firebase is not configured (see .env.example). Responses below are SIMULATED so the UI can be developed offline.";
+  banner.hidden = false;
+  banner.textContent =
+    "SIMULATED mode: Firebase is not configured yet (see .env.example). The router still runs for real, but model answers are labelled SIMULATED and no request leaves this page.";
+} else {
+  banner.hidden = false;
+  banner.classList.add("live");
+  banner.textContent = "Live: Firebase AI Logic is configured. The badge on each answer shows whether Gemini Nano (on-device) or the cloud model actually ran.";
+}
+
+function updatePlan(): void {
+  const prompt = ($("prompt") as HTMLTextAreaElement).value;
+  const plan = $("plan");
+  const routeEl = $("plan-route");
+  const reasonsEl = $("plan-reasons");
+  if (!prompt.trim()) {
+    plan.className = "plan";
+    routeEl.textContent = "Type or pick an example to see the route.";
+    reasonsEl.textContent = "";
+    return;
+  }
+  const d = decideRoute(prompt);
+  plan.className = `plan ${d.route}`;
+  routeEl.textContent = d.route === "LOCAL_FIRST" ? "LOCAL FIRST — try on-device Gemini Nano" : "CLOUD FIRST — try the larger hosted model";
+  reasonsEl.textContent = d.reasons.join(" ");
 }
 
 $("warm").addEventListener("click", () => {
-  $("warm-status").textContent = " preparing...";
-  warmOnDeviceModel((pct) => ($("warm-status").textContent = ` on-device model download: ${pct}%`));
+  if (!firebaseConfigured) {
+    $("warm-status").textContent = " Skipped in SIMULATED mode (no on-device model to download).";
+    return;
+  }
+  $("warm-status").textContent = " preparing…";
+  warmOnDeviceModel((pct) => {
+    $("warm-status").textContent = ` on-device model download: ${pct}%`;
+  });
 });
 
-$("prompt").addEventListener("input", () => {
-  const p = ($("prompt") as HTMLTextAreaElement).value;
-  if (p.trim()) $("warm-status").title = `Planned route: ${decideRoute(p).route}`;
+document.querySelectorAll<HTMLButtonElement>("[data-preset]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const key = btn.dataset.preset ?? "";
+    ($("prompt") as HTMLTextAreaElement).value = PRESETS[key] ?? "";
+    updatePlan();
+    $("prompt").focus();
+  });
 });
+
+$("prompt").addEventListener("input", updatePlan);
 
 $("go").addEventListener("click", async () => {
   const prompt = ($("prompt") as HTMLTextAreaElement).value.trim();
   if (!prompt) return;
+  const go = $("go") as HTMLButtonElement;
+  go.disabled = true;
   const out = $("out");
-  out.innerHTML = '<div class="card">Routing...</div>';
+  out.innerHTML = '<div class="card">Routing…</div>';
   try {
     const r = await runTask(prompt);
     if (r.source === "ON_DEVICE") stats.onDevice++;
     else if (r.source === "IN_CLOUD") stats.inCloud++;
     else stats.mock++;
+    history.unshift({ source: r.source, route: r.decision.route });
+
     const card = document.createElement("div");
     card.className = "card";
     const pill = document.createElement("span");
     pill.className = `pill ${r.source}`;
-    pill.textContent = r.source.replace("_", "-");
+    pill.textContent = r.source === "ON_DEVICE" ? "RAN ON-DEVICE" : r.source === "IN_CLOUD" ? "RAN IN CLOUD" : "SIMULATED";
     const meta = document.createElement("small");
-    meta.textContent = ` policy: ${r.decision.route} (${r.decision.reasons.join("; ")}) in ${Math.round(r.ms)} ms`;
+    meta.className = "meta";
+    meta.textContent = `Policy chose ${r.decision.route.replace("_", "-")}: ${r.decision.reasons.join("; ")}. Finished in ${Math.round(r.ms)} ms.`;
     const body = document.createElement("p");
-    body.textContent = r.text; // textContent: model output is never injected as HTML
+    body.textContent = r.text;
     card.append(pill, meta, body);
     out.replaceChildren(card);
+
+    const log = $("log");
+    const list = $("log-list");
+    log.hidden = false;
+    const item = document.createElement("li");
+    item.textContent = `${r.source.replace("_", " ")} ← policy ${r.decision.route} — “${prompt.slice(0, 60)}${prompt.length > 60 ? "…" : ""}”`;
+    list.insertBefore(item, list.firstChild);
   } catch (e) {
     const card = document.createElement("div");
     card.className = "card";
@@ -49,4 +104,7 @@ $("go").addEventListener("click", async () => {
     out.replaceChildren(card);
   }
   $("stats").textContent = savingsLabel(stats);
+  go.disabled = false;
 });
+
+updatePlan();
