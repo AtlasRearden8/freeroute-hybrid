@@ -1,10 +1,11 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import { getAI, getGenerativeModel, GoogleAIBackend, InferenceMode, type GenerativeModel } from "firebase/ai";
+import { firebaseWebConfig, firebaseConfigured as configPresent } from "./firebase-config";
 
 const env = import.meta.env;
 
-export const firebaseConfigured = Boolean(env.VITE_FIREBASE_API_KEY && env.VITE_FIREBASE_PROJECT_ID && env.VITE_FIREBASE_APP_ID);
+export const firebaseConfigured = configPresent;
 
 export interface Models {
   localFirst: GenerativeModel; // PREFER_ON_DEVICE: Gemini Nano if present, else cloud
@@ -12,28 +13,39 @@ export interface Models {
 }
 
 let cached: Models | null = null;
+let appCheckInitialized = false;
 
 export function getModels(): Models | null {
   if (!firebaseConfigured) return null;
   if (cached) return cached;
 
   const app: FirebaseApp = initializeApp({
-    apiKey: env.VITE_FIREBASE_API_KEY,
-    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: env.VITE_FIREBASE_PROJECT_ID,
-    appId: env.VITE_FIREBASE_APP_ID,
-    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    apiKey: firebaseWebConfig.apiKey,
+    authDomain: firebaseWebConfig.authDomain,
+    projectId: firebaseWebConfig.projectId,
+    appId: firebaseWebConfig.appId,
+    storageBucket: firebaseWebConfig.storageBucket,
+    messagingSenderId: firebaseWebConfig.messagingSenderId,
   });
 
-  // App Check is enforced for Firebase AI Logic. Debug provider for local dev only.
-  if (env.VITE_APPCHECK_DEBUG === "true") {
-    (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  // App Check is only initialized when a reCAPTCHA *site* key is present, or when
+  // a local debug token is explicitly requested. Skipping it lets us see whether
+  // AI Logic actually requires App Check (the live demo should work without it if
+  // enforcement is off).
+  const recaptchaSiteKey = env.VITE_RECAPTCHA_SITE_KEY as string | undefined;
+  const debug = env.VITE_APPCHECK_DEBUG === "true";
+  if (!appCheckInitialized && (recaptchaSiteKey || debug) && typeof self !== "undefined") {
+    if (debug) {
+      (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    }
+    if (recaptchaSiteKey) {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(recaptchaSiteKey),
+        isTokenAutoRefreshEnabled: true,
+      });
+      appCheckInitialized = true;
+    }
   }
-  initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(env.VITE_RECAPTCHA_SITE_KEY || "debug-placeholder"),
-    isTokenAutoRefreshEnabled: true,
-  });
 
   const ai = getAI(app, { backend: new GoogleAIBackend() });
   cached = {

@@ -44,10 +44,10 @@ On-device Gemini Nano needs Chrome 139+ on desktop, the Prompt API flag enabled,
 
 ## How to run
 
+The public Firebase web config is already in `src/firebase-config.ts` (these client values are public by design). A local `.env` is only needed for App Check debug or a reCAPTCHA site key.
+
 ```bash
 npm install
-cp .env.example .env
-# paste your Firebase web config into .env (see DYLAN-FIREBASE-STEPS.md)
 npm test
 npm run dev
 ```

@@ -34,3 +34,14 @@ You can skip step 3 for now. With only the web config from step 2 I can test the
 - The six `firebaseConfig` values (safe to paste here).
 - The reCAPTCHA **site key** only, if you created one (safe to paste here).
 - Do not send the reCAPTCHA **secret key** unless I ask, and then only through the vault.
+
+
+## If the web config is already sent: one more click
+
+Registering the web app is not the same as enabling AI Logic. A test call just now returned: the Firebase AI API (`firebasevertexai.googleapis.com`) is not enabled on project `freeroute-hybrid`.
+
+Open this page and click **Get started** (or **Enable**):
+
+https://console.firebase.google.com/project/freeroute-hybrid/ailogic/
+
+Wait a minute, then tell me it's on. I can retest from here. No new values to copy.
