@@ -1,0 +1,12 @@
+:root { font-family: system-ui, sans-serif; color: #14181f; background: #f6f7f9; }
+main { max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+h1 { margin-bottom: .25rem; }
+.tag { color: #4a5568; margin-top: 0; }
+.banner { background: #fff4d6; border: 1px solid #e6c36a; padding: .5rem .75rem; border-radius: 6px; margin: 1rem 0; }
+label { display: block; margin: 1rem 0 .25rem; font-weight: 600; }
+textarea { width: 100%; box-sizing: border-box; padding: .5rem; font: inherit; }
+button { margin: .5rem .5rem .5rem 0; padding: .55rem .9rem; font: inherit; cursor: pointer; }
+.card { background: #fff; border: 1px solid #dde1e7; border-radius: 8px; padding: .75rem 1rem; margin-top: 1rem; }
+.pill { display: inline-block; padding: .1rem .5rem; border-radius: 999px; font-size: .8rem; font-weight: 600; }
+.pill.ON_DEVICE { background: #d6f5df; } .pill.IN_CLOUD { background: #d9e8ff; } .pill.MOCK { background: #eee; }
+footer { margin-top: 2rem; color: #4a5568; font-size: .9rem; }

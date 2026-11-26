@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FreeRoute Hybrid: local-first AI routing</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>FreeRoute Hybrid</h1>
+      <p class="tag">Runs on your device when it can, in the cloud only when it must. Built on Firebase AI Logic hybrid inference.</p>
+      <div id="banner" class="banner" hidden></div>
+      <button id="warm" type="button">1. Prepare on-device model (Chrome 139+)</button>
+      <span id="warm-status" aria-live="polite"></span>
+      <label for="prompt">2. Ask something</label>
+      <textarea id="prompt" rows="5" placeholder="Summarize this note in two sentences: ..."></textarea>
+      <button id="go" type="button">Route and run</button>
+      <section id="out" aria-live="polite"></section>
+      <footer id="stats">No requests yet.</footer>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

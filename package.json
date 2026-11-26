@@ -1,0 +1,22 @@
+{
+  "name": "freeroute-hybrid",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FreeRoute Hybrid: a local-first AI task router built on Firebase AI Logic hybrid inference (on-device Gemini Nano with cloud fallback).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "firebase": "^13.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "vite": "^7.0.0",
+    "vitest": "^3.0.0"
+  }
+}
