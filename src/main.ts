@@ -7,9 +7,30 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const PRESETS: Record<string, string> = {
   short: "Summarize this note in two sentences: The library holds a Saturday coding hour at 10, and I want a reminder to bring my laptop charger.",
   private: "Keep this confidential: draft a one-line personal reminder that I have a private appointment tomorrow at 2.",
-  heavy: "Analyze these three options and compare the tradeoffs of local models, hosted free tiers, and paid APIs for a solo developer.",
+  heavy: "Analyze these three options and compare the tradeoffs of local models, hosted free tiers, and paid APIs for a solo developer. Answer in five short bullets.",
   long: `${"This is a long briefing. ".repeat(280)}Please extract the five main risks and list them as bullets.`,
 };
+
+/** Tiny, safe markdown subset: escape everything, then allow bold, italics, headings and bullets. */
+function renderLite(src: string): string {
+  const esc = src.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (s: string) =>
+    s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*/g, "$1<em>$2</em>");
+  const out: string[] = [];
+  let list: string[] | null = null;
+  const flush = () => { if (list) { out.push(`<ul>${list.join("")}</ul>`); list = null; } };
+  for (const raw of esc.split(/\n/)) {
+    const line = raw.trim();
+    const bullet = line.match(/^(?:[-*•]|\d+[.)])\s+(.*)$/);
+    const head = line.match(/^#{1,6}\s+(.*)$/);
+    if (bullet) { (list ??= []).push(`<li>${inline(bullet[1])}</li>`); continue; }
+    flush();
+    if (!line || /^-{3,}$/.test(line)) continue;
+    out.push(head ? `<h4>${inline(head[1])}</h4>` : `<p>${inline(line)}</p>`);
+  }
+  flush();
+  return out.join("");
+}
 
 const stats: Stats = { onDevice: 0, inCloud: 0, mock: 0 };
 const history: { source: string; route: string }[] = [];
@@ -86,8 +107,9 @@ $("go").addEventListener("click", async () => {
     const meta = document.createElement("small");
     meta.className = "meta";
     meta.textContent = `Policy chose ${r.decision.route.replace("_", "-")}: ${r.decision.reasons.join("; ")}. Finished in ${Math.round(r.ms)} ms.`;
-    const body = document.createElement("p");
-    body.textContent = r.text;
+    const body = document.createElement("div");
+    body.className = "answer";
+    body.innerHTML = renderLite(r.text);
     card.append(pill, meta, body);
     out.replaceChildren(card);
 

@@ -7,3 +7,6 @@ dist
 .DS_Store
 *.local
 .debug-token
+demo.mp4
+live-success.png
+video2/
